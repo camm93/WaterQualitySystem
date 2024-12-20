@@ -1,0 +1,34 @@
+name: GitHub Actions - Docker CI/CD for Render
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        uses: actions/setup-docker@v1
+
+      - name: Build Docker image
+        run: docker build -t camm93/decision-tree-api:latest .
+
+      - name: Log in to DockerHub
+        run: echo ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+
+      - name: Push Docker image
+        run: docker push camm93/decision-tree-api:latest
+
+      - name: Deploy to Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          curl -X POST \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          https://api.render.com/v1/services/srv-ctibd5tsvqrc73fskprg/deploys
